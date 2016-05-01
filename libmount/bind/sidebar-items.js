@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BindMount","A mount bind definition"]]});
