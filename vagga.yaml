@@ -20,10 +20,10 @@ containers:
                 libssl-dev, build-essential]
 
     - !TarInstall
-      url: "https://static.rust-lang.org/dist/rust-1.10.0-x86_64-unknown-linux-gnu.tar.gz"
+      url: "https://static.rust-lang.org/dist/rust-1.13-x86_64-unknown-linux-gnu.tar.gz"
       script: "./install.sh --prefix=/usr \
                --components=rustc,rust-std-x86_64-unknown-linux-gnu,cargo"
 
     environ:
-      HOME: /work/target
+      HOME: /work
       USER: pc
