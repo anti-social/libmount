@@ -26,6 +26,7 @@ mod bind;
 mod overlay;
 mod tmpfs;
 mod modify;
+mod mountinfo;
 
 use std::io;
 
@@ -34,6 +35,7 @@ pub use bind::BindMount;
 pub use overlay::Overlay;
 pub use tmpfs::Tmpfs;
 pub use modify::Move;
+pub use mountinfo::MountsParser;
 
 /// The raw os error
 ///
