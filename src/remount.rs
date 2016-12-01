@@ -39,6 +39,8 @@ struct MountFlags {
     pub dirsync: Option<bool>,
     pub synchronous: Option<bool>,
     pub mandlock: Option<bool>,
+
+    pub bind: Option<bool>,
 }
 
 impl MountFlags {
@@ -55,6 +57,9 @@ impl MountFlags {
         flags = apply_flag(flags, ms_flags::MS_DIRSYNC, self.dirsync);
         flags = apply_flag(flags, ms_flags::MS_SYNCHRONOUS, self.synchronous);
         flags = apply_flag(flags, ms_flags::MS_MANDLOCK, self.mandlock);
+
+        flags = apply_flag(flags, ms_flags::MS_BIND, self.bind);
+
         flags
     }
 }
@@ -160,6 +165,12 @@ impl Remount {
     /// Set mandlock flag
     pub fn mandlock(mut self, flag: bool) -> Remount {
         self.flags.mandlock = Some(flag);
+        self
+    }
+
+    /// Set mandlock flag
+    pub fn bind(mut self, flag: bool) -> Remount {
+        self.flags.bind = Some(flag);
         self
     }
 
