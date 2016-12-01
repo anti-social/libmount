@@ -24,6 +24,8 @@ use mountinfo::{ParseRowError, parse_mount_point};
 pub struct Remount {
     path: PathBuf,
     flags: MountFlags,
+
+    tmpfs: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -110,6 +112,7 @@ impl Remount {
         Remount {
             path: path.as_ref().to_path_buf(),
             flags: Default::default(),
+            tmpfs: false,
         }
     }
     /// Set readonly flag
@@ -173,14 +176,25 @@ impl Remount {
         self.flags.bind = Some(flag);
         self
     }
+    pub fn tmpfs(mut self) -> Remount {
+        self.tmpfs = true;
+        self
+    }
 
     /// Execute a remount
     pub fn bare_remount(self) -> Result<(), RemountError> {
+        let (fstype, source) = if self.tmpfs {
+            (b"tmpfs\0".as_ptr() as *const i8, b"tmpfs\0".as_ptr() as *const i8)
+        } else {
+            (null(), null())
+        };
+
         let mut flags = try!(get_mountpoint_flags(&self.path));
         flags = self.flags.apply_to_flags(flags) | ms_flags::MS_REMOUNT;
         let rc = unsafe { mount(
-            null(), path_to_cstring(&self.path).as_ptr(),
-            null(),
+            source,
+            path_to_cstring(&self.path).as_ptr(),
+            fstype,
             flags.bits(),
             null()) };
         if rc < 0 {
