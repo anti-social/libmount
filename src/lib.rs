@@ -37,7 +37,7 @@ pub use bind::BindMount;
 pub use overlay::Overlay;
 pub use tmpfs::Tmpfs;
 pub use modify::Move;
-pub use remount::{Remount, RemountError};
+pub use remount::Remount;
 
 /// The raw os error
 ///
