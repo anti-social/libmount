@@ -71,7 +71,7 @@ fn apply_flag(flags: MsFlags, flag: MsFlags, set: Option<bool>) -> MsFlags {
 
 quick_error! {
     #[derive(Debug)]
-    enum RemountError {
+    pub enum RemountError {
         Io(msg: String, err: io::Error) {
             cause(err)
             display("{}: {}", msg, err)
@@ -165,15 +165,12 @@ impl Remount {
 
     /// Execute a remount
     pub fn bare_remount(self) -> Result<(), OSError> {
-        let mut flags = try!(get_mountpoint_flags(&self.path)
-            .map_err(|e| {
-                match e {
-                    RemountError::Io(e) => OSError(e, Box::new(self.clone())),
-                    RemountError::ParseMountInfo | RemountError::UnknownMountPoint => {
-                        OSError(io::Error::new(io::ErrorKind::InvalidData, e), Box::new(self.clone()))
-                    }
-                }
-            });
+        let mut flags = match get_mountpoint_flags(&self.path) {
+            Ok(flags) => flags,
+            Err(e) => {
+                return Err(OSError::from_remount(e, Box::new(self)));
+            },
+        };
         flags = self.flags.apply_to_flags(flags) | ms_flags::MS_REMOUNT;
         let rc = unsafe { mount(
             null(), path_to_cstring(&self.path).as_ptr(),
@@ -181,7 +178,7 @@ impl Remount {
             flags.bits(),
             null()) };
         if rc < 0 {
-            Err(OSError(io::Error::last_os_error(), Box::new(self)))
+            Err(OSError::from_io(io::Error::last_os_error(), Box::new(self)))
         } else {
             Ok(())
         }
@@ -190,6 +187,34 @@ impl Remount {
     /// Execute a remount and explain the error immediately
     pub fn remount(self) -> Result<(), Error> {
         self.bare_remount().map_err(OSError::explain)
+
+        // use std::any::Any;
+        // self.bare_remount().map_err(|e: OSError| {
+        //     let mut explain = None;
+        //     {
+        //         let io_err: &StdError = e.cause().unwrap();
+        //         let err: &Any = &&io_err;
+        //         err.is::<io::Error>();
+        //         // if let Some(e) = e.cause() {
+        //         //     let err: &Any = &e;
+        //         //     err.is::<OSError>();
+        //         // }
+        //         // let io_error = &e.0;
+        //         // if let Some(error) = io_error.cause() {
+        //         //     let error: &(StdError + 'static) = error;
+        //         //     if let Some(remount_error) = error.downcast_ref::<RemountError>() {
+        //         //         explain = Some(format!("{}", remount_error));
+        //         //     }
+        //         // }
+        //     }
+        //     if let Some(explain) = explain {
+        //         Error(e.1, e.0, explain)
+        //     } else {
+        //         let text = e.1.explain();
+        //         Error(e.1, e.0, text)
+        //     }
+        //     // OSError::explain(e)
+        // })
     }
 }
 
@@ -410,6 +435,6 @@ mod test {
             },
             _ => panic!(),
         }
-        assert!(msg.starts_with("path: missing"));
+        assert!(msg.starts_with("Cannot find mount point: \"/�\", path: missing, "));
     }
 }
